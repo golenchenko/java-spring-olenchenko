@@ -21,9 +21,9 @@
 <body>
 <div class="container-fluid mt-1" style="background: antiquewhite;">
     <h2 class="text-center">Новинки</h2>
-    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div id="newProductsCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner" >
-            <div th:each="product, iterStat : ${products}" class="carousel-item" th:classappend="${iterStat.index == 0} ? 'active'">
+            <div th:each="product, iterStat : ${newproducts}" class="carousel-item" th:classappend="${iterStat.index == 0} ? 'active'">
                 <div class="row justify-content-center">
                     <div class="col-md-4 d-flex justify-content-center">
                         <img th:src="${product.imageUrl}" class="d-block w-50 object-fit-contain" alt="Зображення товару">
@@ -48,10 +48,121 @@
                 </div>
             </div>
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+        <button class="carousel-control-prev" type="button" data-bs-target="#newProductsCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon text-dark" style="color: black"  aria-hidden="false"></span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+        <button class="carousel-control-next" type="button" data-bs-target="#newProductsCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon text-dark" style="color: black" aria-hidden="false"></span>
+        </button>
+    </div>
+</div>
+<div class="container-fluid mt-1" style="background: white;">
+    <h2 class="text-center">Хіт продажів</h2>
+    <div id="bestSellersCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" >
+            <div th:each="product, iterStat : ${bestsellers}" class="carousel-item" th:classappend="${iterStat.index == 0} ? 'active'">
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center">
+                        <img th:src="${product.imageUrl}" class="d-block w-50 object-fit-contain" alt="Зображення товару">
+                    </div>
+                    <div class="col-md-6">
+                        <h5 th:text="${product.title}"></h5>
+                        <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
+                        <div th:if="${product['variations']}">
+                            <h6>Доступні модифікації:</h6>
+                            <div th:each="variationEntry : ${product.variations}">
+                                <h6 th:text="${variationEntry.key} + ':'"></h6>
+                                <ul>
+                                    <li th:each="variation : ${variationEntry.value}">
+                                        <a th:href="${variation.url}" th:text="${variation.title}" target="_blank"></a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#bestSellersCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon text-dark" style="color: black"  aria-hidden="false"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#bestSellersCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon text-dark" style="color: black" aria-hidden="false"></span>
+        </button>
+    </div>
+</div>
+<div class="container-fluid mt-1" style="background: antiquewhite;">
+    <h2 class="text-center">Розпродаж</h2>
+    <div id="salesCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" >
+            <div th:each="product, iterStat : ${sales}" class="carousel-item" th:classappend="${iterStat.index == 0} ? 'active'">
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center">
+                        <img th:src="${product.imageUrl}" class="d-block w-50 object-fit-contain" alt="Зображення товару">
+                    </div>
+                    <div class="col-md-6">
+                        <h5 th:text="${product.title}"></h5>
+                        <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
+                        <div th:if="${product['variations']}">
+                            <h6>Доступні модифікації:</h6>
+                            <div th:each="variationEntry : ${product.variations}">
+                                <h6 th:text="${variationEntry.key} + ':'"></h6>
+                                <ul>
+                                    <li th:each="variation : ${variationEntry.value}">
+                                        <a th:href="${variation.url}" th:text="${variation.title}" target="_blank"></a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#salesCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon text-dark" style="color: black"  aria-hidden="false"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#salesCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon text-dark" style="color: black" aria-hidden="false"></span>
+        </button>
+    </div>
+</div>
+<div class="container-fluid mt-1" style="background: white;">
+    <h2 class="text-center">Уцінка</h2>
+    <div id="markdownCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" >
+            <div th:each="product, iterStat : ${markdown}" class="carousel-item" th:classappend="${iterStat.index == 0} ? 'active'">
+                <div class="row justify-content-center">
+                    <div class="col-md-4 d-flex justify-content-center">
+                        <img th:src="${product.imageUrl}" class="d-block w-50 object-fit-contain" alt="Зображення товару">
+                    </div>
+                    <div class="col-md-6">
+                        <h5 th:text="${product.title}"></h5>
+                        <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
+                        <div th:if="${product['variations']}">
+                            <h6>Доступні модифікації:</h6>
+                            <div th:each="variationEntry : ${product.variations}">
+                                <h6 th:text="${variationEntry.key} + ':'"></h6>
+                                <ul>
+                                    <li th:each="variation : ${variationEntry.value}">
+                                        <a th:href="${variation.url}" th:text="${variation.title}" target="_blank"></a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#markdownCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon text-dark" style="color: black"  aria-hidden="false"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#markdownCarousel" data-bs-slide="next">
             <span class="carousel-control-next-icon text-dark" style="color: black" aria-hidden="false"></span>
         </button>
     </div>
