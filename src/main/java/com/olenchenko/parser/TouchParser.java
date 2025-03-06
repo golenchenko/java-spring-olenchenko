@@ -1,7 +1,5 @@
 package com.olenchenko.parser;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,17 +10,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Getter
-@Setter
 public class TouchParser {
-    private final static String url = "https://touch.com.ua/ua/";
+    private final static String url = "https://touch.com.ua/";
+    private String languageTag = "ua";
     private final static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36";
+
+    public Document getMainPage() {
+        return mainPage;
+    }
+
+    public void setMainPage(Document mainPage) {
+        this.mainPage = mainPage;
+    }
+
     private Document mainPage;
     private List<HashMap<String, Object>> newProducts;
 
     public TouchParser() {
         try {
-            mainPage = Jsoup.connect(url).userAgent(userAgent).get();
+            setMainPage(Jsoup.connect(getUrl() + getLanguageTag()).userAgent(userAgent).get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,11 +42,20 @@ public class TouchParser {
     public String getUrl() {
         return url;
     }
+    public String getLanguageTag() {
+        return languageTag;
+    }
     public List<HashMap<String, Object>> getNewProducts() {
         return getNewProducts(false);
     }
     private String formatUrl(String url) {
-        return this.getUrl() + url.replaceFirst("/", "");
+        return this.getUrl() + this.getLanguageTag() + "/" + url.replaceFirst("/", "");
+    }
+    private String formatUrl(String url, boolean withoutLanguageTag) {
+        if (withoutLanguageTag) {
+            return this.getUrl() + url.replaceFirst("/", "");
+        }
+        return formatUrl(url);
     }
     private String formatVariationTitle(String title) {
         return title.split("\\|")[1].replace(" :", "");
@@ -67,6 +82,12 @@ public class TouchParser {
                             String title = tabloid.select("a.name").text().strip();
                             String article = tabloid.select("a.picture").select("div.article > span.artnum_span > span.changeArticle").text();
                             Element anotherVariations;
+
+                           newProduct.put("title", title);
+                           newProduct.put("url", formatUrl(url));
+                           newProduct.put("article", article);
+                           newProduct.put("imageUrl", formatUrl(imageUrl, true));
+
                             if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
                                 HashMap<String, Object> variations = new HashMap<>();
                                 anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
@@ -89,10 +110,6 @@ public class TouchParser {
                                 variations.put(typeOfAnotherVariations, skuPropertyList);
                                 newProduct.put("variations", variations);
                             }
-                           newProduct.put("url", formatUrl(url));
-                            newProduct.put("imageUrl", formatUrl(imageUrl));
-                            newProduct.put("title", title);
-                            newProduct.put("article", article);
 
                             newProductsList.add(newProduct);
 
