@@ -9,11 +9,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Controller
 public class PagesController {
+    private final static String newProductsText = "Новинка";
+    private final static String bestSellersText = "Хіт продажів";
+    private final static String markdownText = "Уцінка";
+    private final static String salesText = "Розпродаж";
     private final String apiUrl;
     public PagesController(@Value("${api}") String apiUrl) {
         this.apiUrl = apiUrl;
@@ -22,17 +27,24 @@ public class PagesController {
     @GetMapping("/")
     public String index(Model model) {
         // Get data from ApiController about new products
-        String url = apiUrl + "newproducts";
+        String url = apiUrl + "mergedcategories";
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+        ResponseEntity<HashMap<String, List<HashMap<String, Object>>>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<>() {
                 }
         );
-        List<Map<String, Object>> products = response.getBody();
-        model.addAttribute("products", products);
+        HashMap<String, List<HashMap<String, Object>>> products = response.getBody();
+        products.forEach((key, value) -> {
+            switch (key) {
+                case newProductsText -> model.addAttribute("newproducts", value);
+                case bestSellersText -> model.addAttribute("bestsellers", value);
+                case markdownText -> model.addAttribute("markdown", value);
+                case salesText -> model.addAttribute("sales", value);
+            }
+        });
         return "index";
     }
 }
