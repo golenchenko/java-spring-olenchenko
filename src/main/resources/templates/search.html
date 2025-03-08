@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пошук товарів</title>
+    <script>
+        async function search() {
+            const query = document.getElementById("searchQuery").value;
+            const page = document.getElementById("pageNumber").value || "";
+            const sort = document.getElementById("sortField").value || "";
+            const minPrice = document.getElementById("minPrice").value || "";
+            const maxPrice = document.getElementById("maxPrice").value || "";
+
+            let url = `http://localhost:8080/api/search?q=${encodeURIComponent(query)}`;
+            if (page) url += `&page_number=${page}`;
+            if (sort) url += `&sort_field=${sort}`;
+            if (minPrice) url += `&min_price=${minPrice}`;
+            if (maxPrice) url += `&max_price=${maxPrice}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "";
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.innerHTML = `
+                    <h3><a href="${item.url}" target="_blank">${item.title}</a></h3>
+                    <img src="${item.imageUrl}" alt="${item.title}" width="100">
+                    <p>Артикул: ${item.article}</p>
+                `;
+                resultsDiv.appendChild(div);
+            });
+        }
+    </script>
+</head>
+<body>
+<h1>Пошук товарів</h1>
+<input type="text" id="searchQuery" placeholder="Введіть запит">
+<input type="number" id="pageNumber" placeholder="Номер сторінки">
+<input type="text" id="sortField" placeholder="Поле сортування">
+<input type="number" id="minPrice" placeholder="Мінімальна ціна">
+<input type="number" id="maxPrice" placeholder="Максимальна ціна">
+<button onclick="search()">Пошук</button>
+<div id="results"></div>
+</body>
+</html>

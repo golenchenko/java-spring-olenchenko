@@ -1,21 +1,24 @@
 package com.olenchenko.parser;
 
+import com.olenchenko.parser.utils.Utils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.olenchenko.Constants.*;
+
+@Component
 public class TouchParser {
     private final static String url = "https://touch.com.ua/";
-    private final static String newProductsText = "Новинка";
-    private final static String bestSellersText = "Хіт продажів";
-    private final static String markdownText = "Уцінка";
-    private final static String salesText = "Розпродаж";
 
     private final static String languageTag = "ua";
 
@@ -25,9 +28,11 @@ public class TouchParser {
     private List<HashMap<String, Object>> bestSellers;
     // markdown - уцінка
     private List<HashMap<String, Object>> markdown;
-
     private List<HashMap<String, Object>> sales;
+
+    private Document mainPage;
     private boolean needToRefresh = false;
+    private final Utils utils = new Utils();
 
     public List<HashMap<String, Object>> getSales() {
         if (sales == null || needToRefresh) {
@@ -39,8 +44,6 @@ public class TouchParser {
     public void setSales(List<HashMap<String, Object>> sales) {
         this.sales = sales;
     }
-
-
 
     public List<HashMap<String, Object>> getMarkdown() {
         if (markdown == null || needToRefresh) {
@@ -76,8 +79,6 @@ public class TouchParser {
         this.mainPage = mainPage;
     }
 
-    private Document mainPage;
-
     public TouchParser() {
         refreshMainPage();
     }
@@ -100,6 +101,9 @@ public class TouchParser {
     }
 
     private String formatUrl(String url) {
+        if (url.contains("/" + languageTag + "/")) {
+            return formatUrl(url, true);
+        }
         return getUrl() + languageTag + "/" + url.replaceFirst("/", "");
     }
     private String formatUrl(String url, boolean withoutLanguageTag) {
@@ -108,59 +112,53 @@ public class TouchParser {
         }
         return formatUrl(url);
     }
-    private String formatVariationTitle(String title) {
-        return title.split("\\|")[1].replace(" :", "");
-    }
 
+    private HashMap<String, Object> getDataFromProductCard(Element element) {
+        HashMap<String, Object> newProduct = new HashMap<>();
+        Element tabloid = element.getElementsByClass("tabloid").getFirst();
+
+        String url = tabloid.select("a.name").attr("href");
+        String imageUrl = tabloid.select("a.picture").select("img").attr("src");
+        String title = tabloid.select("a.name").text().strip();
+        String article = tabloid.select("a.picture").select("div.article > span.artnum_span > span.changeArticle").text();
+
+
+        newProduct.put("title", title);
+        newProduct.put("url", formatUrl(url));
+        newProduct.put("article", article);
+        newProduct.put("imageUrl", formatUrl(imageUrl, true));
+
+        if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
+            Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
+            if (!anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue > div.bg_border").isEmpty()) {
+
+                HashMap<String, Object> variations = new HashMap<>();
+                List<HashMap<String, String>> skuPropertyList = new ArrayList<>();
+                HashMap<String, String> skuProperty;
+                String typeOfAnotherVariations = utils.formatVariationTitle(tabloid.getElementsByClass("skuProperty").getFirst().getElementsByClass("skuPropertyName").getFirst().text());
+                for (Element sku : anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue")) {
+                    Element skuData = sku.select("div.bg_border").getFirst();
+                    skuProperty = new HashMap<>();
+                    String skuName = skuData.select("a.elementSkuPropertyLink").attr("title");
+                    String skuDataId = skuData.select("a.elementSkuPropertyLink").attr("data-id");
+                    String skuUrl = skuData.select("a.elementSkuPropertyLink").attr("href");
+                    skuProperty.put("title", skuName);
+                    skuProperty.put("dataId", skuDataId);
+                    skuProperty.put("url", formatUrl(skuUrl));
+                    skuPropertyList.add(skuProperty);
+                }
+                variations.put(typeOfAnotherVariations, skuPropertyList);
+                newProduct.put("variations", variations);
+            }
+
+        }
+        return newProduct;
+    }
     private List<HashMap<String, Object>> getProductsFromCarousel(Element product) {
         List<HashMap<String, Object>> productsList = new ArrayList<>();
         Elements products = product.select(".item.product.sku.swiper-slide");
-
-        HashMap<String, Object> newProduct;
         for (Element productBlock : products) {
-            newProduct = new HashMap<>();
-            Element tabloid = productBlock.getElementsByClass("tabloid").getFirst();
-
-            String url = tabloid.select("a.name").attr("href");
-            String imageUrl = tabloid.select("a.picture").select("img").attr("src");
-            String title = tabloid.select("a.name").text().strip();
-            String article = tabloid.select("a.picture").select("div.article > span.artnum_span > span.changeArticle").text();
-
-
-            newProduct.put("title", title);
-            newProduct.put("url", formatUrl(url));
-            newProduct.put("article", article);
-            newProduct.put("imageUrl", formatUrl(imageUrl, true));
-
-            if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
-                Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
-                if (!anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue > div.bg_border").isEmpty()) {
-
-                    HashMap<String, Object> variations = new HashMap<>();
-                    List<HashMap<String, String>> skuPropertyList = new ArrayList<>();
-                    HashMap<String, String> skuProperty;
-                    String typeOfAnotherVariations = formatVariationTitle(tabloid.getElementsByClass("skuProperty").getFirst().getElementsByClass("skuPropertyName").getFirst().text());
-                    for (Element sku : anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue")) {
-                        skuProperty = new HashMap<>();
-
-                        Element skuData = sku.select("div.bg_border").getFirst();
-
-                        String skuName = skuData.select("a.elementSkuPropertyLink").attr("title");
-                        String skuDataId = skuData.select("a.elementSkuPropertyLink").attr("data-id");
-                        String skuUrl = skuData.select("a.elementSkuPropertyLink").attr("href");
-                        skuProperty.put("title", skuName);
-                        skuProperty.put("dataId", skuDataId);
-                        skuProperty.put("url", formatUrl(skuUrl));
-                        skuPropertyList.add(skuProperty);
-                    }
-                    variations.put(typeOfAnotherVariations, skuPropertyList);
-                    newProduct.put("variations", variations);
-                }
-
-            }
-
-            productsList.add(newProduct);
-
+            productsList.add(getDataFromProductCard(productBlock));
         }
         return productsList;
     }
@@ -200,5 +198,36 @@ public class TouchParser {
         mergedCategories.put(salesText, getSales());
         mergedCategories.put(markdownText, getMarkdown());
         return mergedCategories;
+    }
+
+
+    public List<HashMap<String, Object>> getProductsFromQuery(String query, HashMap<String, String> filters) {
+        List<HashMap<String, Object>> products = new ArrayList<>();
+        Document searchPage;
+        try {
+            searchPage = Jsoup.connect(
+                    getUrl() +
+                            languageTag +
+                            "/search/?q=" +
+                            URLEncoder.encode(query, StandardCharsets.UTF_8) +
+                            utils.hashMapFiltersToUrlQuery(filters)
+            ).userAgent(userAgent).get();
+
+            if (searchPage.getElementsByClass("not_found_text").isEmpty()) {
+                Element resultPage = searchPage.getElementsByClass("items productList").getFirst().getElementsByTag("div").getFirst();
+                Elements productsBlocks = resultPage.select(".item.product.sku");
+
+                for (Element product : productsBlocks) {
+                    if (!product.getElementsByTag("noindex").isEmpty()) {
+                        continue;
+                    }
+                    products.add(getDataFromProductCard(product));
+                }
+            }
+            return products;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
     }
 }

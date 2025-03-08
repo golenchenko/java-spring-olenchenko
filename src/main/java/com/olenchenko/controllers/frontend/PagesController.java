@@ -11,22 +11,19 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static com.olenchenko.Constants.*;
 
 @Controller
 public class PagesController {
-    private final static String newProductsText = "Новинка";
-    private final static String bestSellersText = "Хіт продажів";
-    private final static String markdownText = "Уцінка";
-    private final static String salesText = "Розпродаж";
     private final String apiUrl;
     public PagesController(@Value("${api}") String apiUrl) {
         this.apiUrl = apiUrl;
     }
-
+    // The given ParameterizedTypeReference is used to pass generic type information.
+    // https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/client/RestTemplate.html#exchange(java.net.URI,org.springframework.http.HttpMethod,org.springframework.http.HttpEntity,org.springframework.core.ParameterizedTypeReference)
     @GetMapping("/")
     public String index(Model model) {
-        // Get data from ApiController about new products
         String url = apiUrl + "mergedcategories";
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<HashMap<String, List<HashMap<String, Object>>>> response = restTemplate.exchange(
@@ -46,5 +43,9 @@ public class PagesController {
             }
         });
         return "index";
+    }
+    @GetMapping("/search")
+    public String search() {
+        return "search";
     }
 }
