@@ -8,7 +8,11 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,7 +88,7 @@ public class TouchParser {
     }
     public void refreshMainPage() {
         try {
-            setMainPage(Jsoup.connect(getUrl() + languageTag).userAgent(userAgent).get());
+            setMainPage(Jsoup.connect(getUrl() + languageTag).userAgent(userAgent).followRedirects(true).get());
             needToRefresh = true;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -104,6 +108,9 @@ public class TouchParser {
         if (url.contains("/" + languageTag + "/")) {
             return formatUrl(url, true);
         }
+        if (url.contains("https://")) {
+            return url.replace(getUrl(), getUrl() + languageTag + "/");
+        }
         return getUrl() + languageTag + "/" + url.replaceFirst("/", "");
     }
     private String formatUrl(String url, boolean withoutLanguageTag) {
@@ -112,13 +119,25 @@ public class TouchParser {
         }
         return formatUrl(url);
     }
+    private String getHQImageUrl(String url) {
+        url = formatUrl(url, true);
+        url = url.replace("webp/resize_cache/", "webp/");
+        return url.replaceAll("\\d+_\\d+_\\d+/", "");
+    }
 
     private HashMap<String, Object> getDataFromProductCard(Element element) {
         HashMap<String, Object> newProduct = new HashMap<>();
         Element tabloid = element.getElementsByClass("tabloid").getFirst();
 
         String url = tabloid.select("a.name").attr("href");
-        String imageUrl = tabloid.select("a.picture").select("img").attr("src");
+        Elements image = tabloid.select("a.picture").select("img");
+        String imageUrl;
+        if (!image.attr("data-src").isEmpty()) {
+            imageUrl = image.attr("data-src");
+        }
+        else {
+            imageUrl = image.attr("src");
+        }
         String title = tabloid.select("a.name").text().strip();
         String article = tabloid.select("a.picture").select("div.article > span.artnum_span > span.changeArticle").text();
 
@@ -126,7 +145,7 @@ public class TouchParser {
         newProduct.put("title", title);
         newProduct.put("url", formatUrl(url));
         newProduct.put("article", article);
-        newProduct.put("imageUrl", formatUrl(imageUrl, true));
+        newProduct.put("imageUrl", getHQImageUrl(imageUrl));
 
         if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
             Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
@@ -200,6 +219,12 @@ public class TouchParser {
         return mergedCategories;
     }
 
+    public HashMap<String, Object> getProductByUrl(String url) {
+        return null;
+    }
+    public HashMap<String, Object> getProductByArticle(int id) {
+        return null;
+    }
 
     public List<HashMap<String, Object>> getProductsFromQuery(String query, HashMap<String, String> filters) {
         List<HashMap<String, Object>> products = new ArrayList<>();
@@ -210,12 +235,44 @@ public class TouchParser {
                             languageTag +
                             "/search/?q=" +
                             URLEncoder.encode(query, StandardCharsets.UTF_8) +
-                            utils.hashMapFiltersToUrlQuery(filters)
-            ).userAgent(userAgent).get();
+                            utils.hashMapFiltersToUrlWithQuery(filters)
+            ).userAgent(userAgent).followRedirects(true).header("user-agent", userAgent).get();
 
-            if (searchPage.getElementsByClass("not_found_text").isEmpty()) {
-                Element resultPage = searchPage.getElementsByClass("items productList").getFirst().getElementsByTag("div").getFirst();
-                Elements productsBlocks = resultPage.select(".item.product.sku");
+            String location = searchPage.location();
+            if (!location.isEmpty()) {
+//                We use HttpClient instead of Jsoup.connect() because
+//                Jsoup doesn't return original page content (bug?)
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(formatUrl(location)))
+                        .GET()
+                        .setHeader("user-agent", userAgent)
+                        .build();
+
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                searchPage = Jsoup.parse(response.body());
+
+                String url = URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)).toString();
+                if (!searchPage.select("#breadcrumbs").isEmpty()) {
+                    request = HttpRequest.newBuilder()
+                            .uri(URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)))
+                            .GET()
+                            .setHeader("user-agent", userAgent)
+                            .build();
+                    response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    searchPage = Jsoup.parse(response.body());
+                }
+            }
+            if (searchPage.getElementsByClass("not_found_text").isEmpty() || searchPage.getElementsByClass("emptyWrapper").isEmpty()) {
+                Elements resultPage = searchPage.getElementsByClass("items productList");
+                Element resultPageElement;
+                if(resultPage.isEmpty()) {
+                    resultPageElement = searchPage.selectFirst("div.ajaxContainer > div");
+                }
+                else {
+                    resultPageElement = resultPage.getFirst().getElementsByTag("div").getFirst();
+                }
+                Elements productsBlocks = resultPageElement.select(".item.product.sku");
 
                 for (Element product : productsBlocks) {
                     if (!product.getElementsByTag("noindex").isEmpty()) {
@@ -225,7 +282,7 @@ public class TouchParser {
                 }
             }
             return products;
-        } catch (IOException ex) {
+        } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
         }
 
