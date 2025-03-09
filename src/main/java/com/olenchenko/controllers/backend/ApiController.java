@@ -67,28 +67,36 @@ public class ApiController {
 
     @GetMapping(value="/api/search", produces = "application/json")
     public String search(@RequestParam String q,
-                         @RequestParam(required = false, defaultValue = "1") int page_number,
+                         @RequestParam(required = false, defaultValue = "-1") int page_number,
                          @RequestParam(required = false, defaultValue = "SHOWS") String sort_field,
-                         @RequestParam(required = false, defaultValue = "disabled") String min_price,
-                         @RequestParam(required = false, defaultValue = "disabled") String max_price
+                         @RequestParam(required = false, defaultValue = "-1") int min_price,
+                         @RequestParam(required = false, defaultValue = "-1") int max_price
     ) {
         Gson gson = new Gson();
         boolean isFilterEnabled = false;
         HashMap<String, String> filters = new HashMap<>();
         String sortFieldInUpperCase = sort_field.toUpperCase();
-        filters.put("PAGEN_1", String.valueOf(page_number));
+        if (page_number > 1) {
+            filters.put("PAGEN_1", String.valueOf(page_number));
+        }
         if (sortFields.contains(sortFieldInUpperCase)) {
             filters.put("SORT_FIELD", sort_field);
         } else {
             filters.put("SORT_FIELD", "SHOWS");
         }
 
-        if (String.valueOf(min_price).matches("\\d+")) {
-            filters.put("arrFilterFilter_P1_MIN", min_price);
+        if (max_price < min_price) {
+            int temp = min_price;
+            min_price = max_price;
+            max_price = temp;
+        }
+
+        if (min_price >= 0) {
+            filters.put("arrFilterFilter_P1_MIN", String.valueOf(min_price));
             isFilterEnabled = true;
         }
-        if (String.valueOf(max_price).matches("\\d+")) {
-            filters.put("arrFilterFilter_P1_MAX", max_price);
+        if (max_price >= 0) {
+            filters.put("arrFilterFilter_P1_MAX", String.valueOf(max_price));
             isFilterEnabled = true;
         }
 
