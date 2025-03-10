@@ -45,7 +45,8 @@ public class PagesController {
         return "index";
     }
     @GetMapping("/search")
-    public String search() {
+    public String search(Model model) {
+        model.addAttribute("apiUrl", apiUrl);
         return "search";
     }
 }
