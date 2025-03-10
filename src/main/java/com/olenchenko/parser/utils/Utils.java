@@ -23,22 +23,24 @@ public class Utils {
     public String hashMapToCategorizedUrl(HashMap<String, String> filters) {
         StringBuilder query = new StringBuilder();
         if (filters.containsKey("set_filter")) {
-            query.append("/").append("filter");
-            filters.remove("set_filter");
+            query.append("filter");
         }
         if (filters.containsKey("arrFilterFilter_P1_MIN") && filters.containsKey("arrFilterFilter_P1_MAX")) {
-            query.append("/").append("price-base-from-").append(filters.get("arrFilterFilter_P1_MIN"))
+            StringBuilder minMaxFilter = new StringBuilder().append("price-base-from-").append(filters.get("arrFilterFilter_P1_MIN"))
                     .append("-to-").append(filters.get("arrFilterFilter_P1_MAX"));
+            query.append("/").append(minMaxFilter);
             filters.remove("arrFilterFilter_P1_MIN");
             filters.remove("arrFilterFilter_P1_MAX");
         }
         else {
+            StringBuilder priceFilter = new StringBuilder();
             if (filters.containsKey("arrFilterFilter_P1_MAX")) {
-                query.append("/").append("price-base-to-").append(filters.get("arrFilterFilter_P1_MAX"));
-
+                priceFilter.append("price-base-to-").append(filters.get("arrFilterFilter_P1_MAX"));
+                query.append("/").append(priceFilter);
                 filters.remove("arrFilterFilter_P1_MAX");
             } else if (filters.containsKey("arrFilterFilter_P1_MIN")) {
-                query.append("/").append("price-base-from-").append(filters.get("arrFilterFilter_P1_MIN"));
+                priceFilter.append("price-base-from-").append(filters.get("arrFilterFilter_P1_MIN"));
+                query.append("/").append(priceFilter);
                 filters.remove("arrFilterFilter_P1_MIN");
             }
         }
