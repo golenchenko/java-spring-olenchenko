@@ -152,6 +152,12 @@ public class TouchParser {
         String priceWithoutDiscount = forPrice.select("div.old_price > span.discount").text();
         String priceWithDiscount = forPrice.select("a.price > div:nth-child(2)").text();
 
+        if (!priceWithDiscount.matches(".*\\d.*")) {
+            Element temp = forPrice;
+            temp.select("div.old_price").remove();
+            priceWithDiscount = temp.select("a.price").text();
+        }
+
         newProduct.put("priceWithoutDiscount", priceWithoutDiscount);
         newProduct.put("priceWithDiscount", priceWithDiscount);
         if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
@@ -229,8 +235,67 @@ public class TouchParser {
     public HashMap<String, Object> getProductByUrl(String url) {
         return null;
     }
+
+    private HashMap<String, Object> getDataFromProductPage(Element element) {
+        HashMap<String, Object> product = new HashMap<>();
+        String url = element.select("link[rel=canonical]").attr("href");
+        String description = element.getElementsByClass("changeDescription").getFirst().text();
+        String title = element.getElementsByClass("changeName").getFirst().text();
+        String priceWithDiscount = element.getElementsByClass("changePrice").getFirst().text();
+        String priceWithoutDiscount = "";
+        int priceWithoutDiscountElement = element.getElementsByClass("old_new_price").size();
+        if (priceWithoutDiscountElement > 0) {
+            priceWithoutDiscount = element.getElementsByClass("old_new_price").getFirst().text();
+        }
+        product.put("priceWithoutDiscount", priceWithoutDiscount);
+        Element properties = element.getElementsByClass("wd_propsorter").getFirst();
+        HashMap<String, String> productProperties = new HashMap<>();
+
+        Element tableOfProperties = properties.getElementsByTag("tbody").getFirst();
+//        remove all elements with class row_empty
+        tableOfProperties.select("tr.row_empty").remove();
+        tableOfProperties.select("tr.row_header").remove();
+        for (Element property : tableOfProperties.getElementsByTag("tr")) {
+            String key = property.getElementsByClass("cell_name").getFirst().text();
+            String value = property.getElementsByClass("cell_value").getFirst().text();
+            productProperties.put(key, value);
+        }
+        product.put("description", description);
+        product.put("title", title);
+        product.put("priceWithoutDiscount", priceWithoutDiscount);
+        product.put("priceWithDiscount", priceWithDiscount);
+        product.put("properties", productProperties);
+        product.put("url", url);
+        return product;
+    }
     public HashMap<String, Object> getProductByArticle(int id) {
-        return null;
+        try {
+
+            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(getUrl() +
+                            languageTag +
+                            "/search/?q=" +
+                            URLEncoder.encode(String.valueOf(id), StandardCharsets.UTF_8) ))
+                    .GET()
+                    .setHeader("user-agent", userAgent)
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String location = response.headers().firstValue("Location").get();
+            if (!location.contains("/" + languageTag + "/")) {
+                location = location.replace("/item/", "/" + languageTag + "/item/");
+            }
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(location))
+                    .GET()
+                    .setHeader("user-agent", userAgent)
+                    .build();
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return getDataFromProductPage(Jsoup.parse(response.body()));
+        } catch (IOException | InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public List<HashMap<String, Object>> getProductsFromQuery(String query, HashMap<String, String> filters) {
@@ -238,8 +303,7 @@ public class TouchParser {
         Document searchPage;
         try {
 
-            HttpClient client = HttpClient.newHttpClient();
-            client.followRedirects();
+            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(getUrl() +
                             languageTag +
@@ -251,10 +315,21 @@ public class TouchParser {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            String location = "";
+            if (response.headers().firstValue("Location").isPresent()) {
+                location = response.headers().firstValue("Location").get();
+                request = HttpRequest.newBuilder()
+                        .uri(URI.create(location))
+                        .GET()
+                        .setHeader("user-agent", userAgent)
+                        .build();
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            }
             searchPage = Jsoup.parse(response.body());
 
             if (!searchPage.select("#breadcrumbs").isEmpty()) {
-                String location = searchPage.location();
                 String url = URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)).toString();
                 client = HttpClient.newHttpClient();
                 request = HttpRequest.newBuilder()

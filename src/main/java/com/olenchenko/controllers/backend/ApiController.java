@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.olenchenko.parser.TouchParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +16,7 @@ public class ApiController {
 
 
     TouchParser touchParser;
-    private List<String> sortFields = List.of("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE");
+    private final List<String> sortFields = List.of("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE");
 
 //    @Autowired - Field injection is not recommended.
 //    Constructor injection is preferred as it allows for better testability and immutability.
@@ -63,6 +64,18 @@ public class ApiController {
         touchParser.refreshMainPage();
         Gson gson = new Gson();
         return gson.toJson("Data refreshed");
+    }
+
+    @GetMapping(value = "/api/productdata/{id}", produces = "application/json")
+    public String getProductData(@PathVariable int id) {
+        Gson gson = new Gson();
+        return gson.toJson(touchParser.getProductByArticle(id));
+    }
+    @GetMapping(value = "/api/downloaddata/{id}", produces = "application/json")
+    public String getTabledData(@PathVariable int id) {
+//        Gson gson = new Gson();
+//        return gson.toJson(touchParser.getProductByArticle(id));
+        return "Not implemented";
     }
 
     @GetMapping(value="/api/search", produces = "application/json")

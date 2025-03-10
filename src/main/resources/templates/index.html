@@ -31,6 +31,7 @@
                     <div class="col-md-6">
                         <h5 th:text="${product.title}"></h5>
                         <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <p>Ціна: <sup><del th:text="${product.priceWithoutDiscount}"></del></sup> <b th:text="${product.priceWithDiscount}"></b></p>
                         <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
                         <div th:if="${product['variations']}">
                             <h6>Доступні модифікації:</h6>
@@ -68,6 +69,7 @@
                     <div class="col-md-6">
                         <h5 th:text="${product.title}"></h5>
                         <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <p>Ціна: <sup><del th:text="${product.priceWithoutDiscount}"></del></sup> <b th:text="${product.priceWithDiscount}"></b></p>
                         <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
                         <div th:if="${product['variations']}">
                             <h6>Доступні модифікації:</h6>
@@ -105,6 +107,7 @@
                     <div class="col-md-6">
                         <h5 th:text="${product.title}"></h5>
                         <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <p>Ціна: <sup><del th:text="${product.priceWithoutDiscount}"></del></sup> <b th:text="${product.priceWithDiscount}"></b></p>
                         <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
                         <div th:if="${product['variations']}">
                             <h6>Доступні модифікації:</h6>
@@ -142,6 +145,7 @@
                     <div class="col-md-6">
                         <h5 th:text="${product.title}"></h5>
                         <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
+                        <p>Ціна: <sup><del th:text="${product.priceWithoutDiscount}"></del></sup> <b th:text="${product.priceWithDiscount}"></b></p>
                         <a th:href="${product.url}" class="btn btn-primary mb-2" target="_blank">Відкрити на сайті</a>
                         <div th:if="${product['variations']}">
                             <h6>Доступні модифікації:</h6>

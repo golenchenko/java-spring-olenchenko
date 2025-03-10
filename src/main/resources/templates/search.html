@@ -77,20 +77,37 @@
 
             const resultsDiv = document.getElementById("results");
             resultsDiv.innerHTML = "";
-            data.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "product";
-                div.innerHTML = `
+            try {
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = "<p><b>Товари не знайдено</b></p>";
+                }
+                else {
+                    data.forEach(item => {
+                        const div = document.createElement("div");
+                        div.className = "product";
+                        div.innerHTML = `
                     <h5><a href="${item.url}" target="_blank" class="text-decoration-none fw-bold" style="color: #594402;">${item.title}</a></h5>
                     <img src="${item.imageUrl}" alt="${item.title}" width="100">
                     <p>Артикул: ${item.article}</p>
                     <p>Ціна: <sup><del>${item.priceWithoutDiscount}</del></sup> <b>${item.priceWithDiscount}</b></p>
+                    <button onclick="downloadProductData('${item.article}')">Завантажити інформацію про товар</button>
                 `;
-                resultsDiv.appendChild(div);
-            });
+                        resultsDiv.appendChild(div);
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                resultsDiv.innerHTML = "<p>Помилка під час пошуку</p>";
+            }
+
             button.disabled = false;
             button.textContent = "Пошук";
         }
+        function downloadProductData(article) {
+            let url = document.querySelector('meta[name="api"]').content + `downloaddata/${article}`;
+            window.open(url, '_blank');
+        }
+
     </script>
 </head>
 <body>
