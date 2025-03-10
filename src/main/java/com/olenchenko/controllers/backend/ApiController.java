@@ -1,8 +1,13 @@
 package com.olenchenko.controllers.backend;
 
 import com.google.gson.Gson;
+import com.olenchenko.Model.Product;
 import com.olenchenko.parser.TouchParser;
+import com.olenchenko.services.ExcelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +19,7 @@ import java.util.List;
 @RestController
 public class ApiController {
 
+    ExcelService excelService;
 
     TouchParser touchParser;
     private final List<String> sortFields = List.of("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE");
@@ -26,7 +32,8 @@ public class ApiController {
 //    declared in the constructor.
 //    https://www.geeksforgeeks.org/why-is-field-injection-not-recommended-in-spring/
     @Autowired
-    public ApiController(TouchParser touchParser) {
+    public ApiController(TouchParser touchParser, ExcelService excelService) {
+        this.excelService = excelService;
         this.touchParser = touchParser;
     }
 
@@ -72,10 +79,10 @@ public class ApiController {
         return gson.toJson(touchParser.getProductByArticle(id));
     }
     @GetMapping(value = "/api/downloaddata/{id}", produces = "application/json")
-    public String getTabledData(@PathVariable int id) {
-//        Gson gson = new Gson();
-//        return gson.toJson(touchParser.getProductByArticle(id));
-        return "Not implemented";
+    public ResponseEntity<byte[]> getTabledData(@PathVariable int id) {
+        Product product = touchParser.getProductByArticle(id);
+        byte[] result = excelService.generateXLSXFile(product);
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=product.xlsx").body(result);
     }
 
     @GetMapping(value="/api/search", produces = "application/json")
