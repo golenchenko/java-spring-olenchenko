@@ -1,13 +1,18 @@
 package com.olenchenko.parser.utils;
 
+import lombok.NoArgsConstructor;
+
 import java.util.HashMap;
 
+@NoArgsConstructor
 public class Utils {
-    public Utils() {
-    }
-
     public String formatVariationTitle(String title) {
-        return title.split("\\|")[1].replace(" :", "");
+        String result = title;
+        String[] split = result.split("\\|");
+        if (split.length > 1) {
+            result = split[1];
+        }
+        return result.replace(" :", "");
     }
     public String hashMapFiltersToUrlWithQuery(HashMap<String, String> filters) {
         StringBuilder query = new StringBuilder();
