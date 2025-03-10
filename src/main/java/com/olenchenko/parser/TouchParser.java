@@ -8,6 +8,7 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.lang.annotation.ElementType;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -147,6 +148,12 @@ public class TouchParser {
         newProduct.put("article", article);
         newProduct.put("imageUrl", getHQImageUrl(imageUrl));
 
+        Element forPrice = tabloid.select("div.buy_data").getFirst();
+        String priceWithoutDiscount = forPrice.select("div.old_price > span.discount").text();
+        String priceWithDiscount = forPrice.select("a.price > div:nth-child(2)").text();
+
+        newProduct.put("priceWithoutDiscount", priceWithoutDiscount);
+        newProduct.put("priceWithDiscount", priceWithDiscount);
         if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
             Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
             if (!anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue > div.bg_border").isEmpty()) {
@@ -230,38 +237,34 @@ public class TouchParser {
         List<HashMap<String, Object>> products = new ArrayList<>();
         Document searchPage;
         try {
-            searchPage = Jsoup.connect(
-                    getUrl() +
+
+            HttpClient client = HttpClient.newHttpClient();
+            client.followRedirects();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(getUrl() +
                             languageTag +
                             "/search/?q=" +
                             URLEncoder.encode(query, StandardCharsets.UTF_8) +
-                            utils.hashMapFiltersToUrlWithQuery(filters)
-            ).userAgent(userAgent).followRedirects(true).header("user-agent", userAgent).get();
+                            utils.hashMapFiltersToUrlWithQuery(filters)))
+                    .GET()
+                    .setHeader("user-agent", userAgent)
+                    .build();
 
-            String location = searchPage.location();
-            if (!location.isEmpty()) {
-//                We use HttpClient instead of Jsoup.connect() because
-//                Jsoup doesn't return original page content (bug?)
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(formatUrl(location)))
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            searchPage = Jsoup.parse(response.body());
+
+            if (!searchPage.select("#breadcrumbs").isEmpty()) {
+                String location = searchPage.location();
+                String url = URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)).toString();
+                client = HttpClient.newHttpClient();
+                request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
                         .GET()
                         .setHeader("user-agent", userAgent)
                         .build();
 
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 searchPage = Jsoup.parse(response.body());
-
-                String url = URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)).toString();
-                if (!searchPage.select("#breadcrumbs").isEmpty()) {
-                    request = HttpRequest.newBuilder()
-                            .uri(URI.create(formatUrl(location) + utils.hashMapToCategorizedUrl(filters)))
-                            .GET()
-                            .setHeader("user-agent", userAgent)
-                            .build();
-                    response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    searchPage = Jsoup.parse(response.body());
-                }
             }
             if (searchPage.getElementsByClass("not_found_text").isEmpty() || searchPage.getElementsByClass("emptyWrapper").isEmpty()) {
                 Elements resultPage = searchPage.getElementsByClass("items productList");
