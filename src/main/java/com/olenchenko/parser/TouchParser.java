@@ -73,6 +73,7 @@ public class TouchParser {
     public TouchParser() {
         refreshMainPage();
     }
+
     public void refreshMainPage() {
         try {
             setMainPage(Jsoup.connect(getUrl() + languageTag).userAgent(userAgent).followRedirects(true).get());
@@ -81,6 +82,7 @@ public class TouchParser {
             throw new RuntimeException(e);
         }
     }
+
     public List<ProductCard> getNewProducts() {
         if (newProducts == null || needToRefresh) {
             parseMainPage();
@@ -97,12 +99,14 @@ public class TouchParser {
         }
         return getUrl() + languageTag + "/" + url.replaceFirst("/", "");
     }
+
     private String formatUrl(String url, boolean withoutLanguageTag) {
         if (withoutLanguageTag) {
             return getUrl() + url.replaceFirst("/", "");
         }
         return formatUrl(url);
     }
+
     private String getHQImageUrl(String url) {
         url = formatUrl(url, true);
         url = url.replace("webp/resize_cache/", "webp/");
@@ -118,8 +122,7 @@ public class TouchParser {
         String imageUrl;
         if (!image.attr("data-src").isEmpty()) {
             imageUrl = image.attr("data-src");
-        }
-        else {
+        } else {
             imageUrl = image.attr("src");
         }
         String title = tabloid.select("a.name").text().strip();
@@ -169,6 +172,7 @@ public class TouchParser {
         }
         return productCard;
     }
+
     private HashMap<String, List<HashMap<String, String>>> getVariantsFromProductPage(Element productPage) {
         HashMap<String, List<HashMap<String, String>>> variants = new HashMap<>();
         Elements variantsBlock = productPage.getElementsByClass("elementSkuProperty");
@@ -201,8 +205,7 @@ public class TouchParser {
                 if (div.isEmpty()) {
                     skuName = sku.getElementsByClass("elementSkuPropertyLink").attr("title");
                     skuUrl = sku.getElementsByClass("elementSkuPropertyLink").attr("href");
-                }
-                else {
+                } else {
                     Element bgBorderDiv = div.getFirst();
                     skuName = bgBorderDiv.getElementsByClass("elementSkuPropertyLink").attr("title");
                     skuUrl = bgBorderDiv.getElementsByClass("elementSkuPropertyLink").attr("href");
@@ -215,6 +218,7 @@ public class TouchParser {
         }
         return variants;
     }
+
     private List<ProductCard> getProductsFromCarousel(Element product) {
         List<ProductCard> productsList = new ArrayList<>();
         Elements products = product.select(".item.product.sku.swiper-slide");
@@ -223,12 +227,13 @@ public class TouchParser {
         }
         return productsList;
     }
+
     public void parseMainPage() {
         Document mainPage = getMainPage();
         Element homeCatalog = mainPage.getElementById("homeCatalog");
         if (homeCatalog != null) {
             Elements blocks = homeCatalog.getElementsByAttributeValue("id", "sliderBlock_productList");
-            for(Element product : blocks) {
+            for (Element product : blocks) {
                 String titleOfTheBlock = product.getElementsByTag("div").getFirst().getElementsByTag("h2").text().strip();
                 List<ProductCard> productsList = getProductsFromCarousel(product);
                 switch (titleOfTheBlock) {
@@ -249,6 +254,7 @@ public class TouchParser {
             needToRefresh = false;
         }
     }
+
     public HashMap<String, List<ProductCard>> getMergedCategories() {
         if (newProducts == null || bestSellers == null || sales == null || markdown == null) {
             parseMainPage();
@@ -312,7 +318,7 @@ public class TouchParser {
                     .uri(URI.create(getUrl() +
                             languageTag +
                             "/search/?q=" +
-                            URLEncoder.encode(String.valueOf(id), StandardCharsets.UTF_8) ))
+                            URLEncoder.encode(String.valueOf(id), StandardCharsets.UTF_8)))
                     .GET()
                     .setHeader("user-agent", userAgent)
                     .build();
@@ -380,10 +386,9 @@ public class TouchParser {
             if (searchPage.getElementsByClass("not_found_text").isEmpty() || searchPage.getElementsByClass("emptyWrapper").isEmpty()) {
                 Elements resultPage = searchPage.getElementsByClass("items productList");
                 Element resultPageElement;
-                if(resultPage.isEmpty()) {
+                if (resultPage.isEmpty()) {
                     resultPageElement = searchPage.selectFirst("div.ajaxContainer > div");
-                }
-                else {
+                } else {
                     resultPageElement = resultPage.getFirst().getElementsByTag("div").getFirst();
                 }
                 Elements productsBlocks = resultPageElement.select(".item.product.sku");

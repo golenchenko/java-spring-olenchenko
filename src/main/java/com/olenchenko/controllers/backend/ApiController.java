@@ -23,7 +23,7 @@ public class ApiController {
     TouchParser touchParser;
     private final List<String> sortFields = List.of("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE");
 
-//    @Autowired - Field injection is not recommended.
+    //    @Autowired - Field injection is not recommended.
 //    Constructor injection is preferred as it allows for better testability and immutability.
 //    Field injection hides the dependencies of the class, making it unclear what dependencies
 //    the class relies on. This can make the class harder to understand and maintain.
@@ -40,33 +40,39 @@ public class ApiController {
     public String getData() {
         return "Ok";
     }
+
     @GetMapping(value = "/api/newproducts", produces = "application/json")
     public String getMainPage() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getNewProducts());
     }
-//    TODO: Fix sequence of categories.
+
+    //    TODO: Fix sequence of categories.
 //     Disable gson sorting (for example return [y, d, e] instead of [d, e, y].
     @GetMapping(value = "/api/mergedcategories", produces = "application/json")
     public String getMergedCategoriesFromMainPage() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getMergedCategories());
     }
+
     @GetMapping(value = "/api/sales", produces = "application/json")
     public String getSales() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getSales());
     }
+
     @GetMapping(value = "/api/markdown", produces = "application/json")
     public String getMarkdown() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getMarkdown());
     }
+
     @GetMapping(value = "/api/bestsellers", produces = "application/json")
     public String getBestSellers() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getBestSellers());
     }
+
     @GetMapping(value = "/api/refreshdata", produces = "application/json")
     public String refreshData() {
         touchParser.refreshMainPage();
@@ -79,6 +85,7 @@ public class ApiController {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getProductByArticle(id));
     }
+
     @GetMapping(value = "/api/downloaddata/{id}", produces = "application/json")
     public ResponseEntity<byte[]> getTabledData(@PathVariable int id) {
         Product product = touchParser.getProductByArticle(id);
@@ -86,7 +93,7 @@ public class ApiController {
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=product.xlsx").body(result);
     }
 
-    @GetMapping(value="/api/search", produces = "application/json")
+    @GetMapping(value = "/api/search", produces = "application/json")
     public String search(@RequestParam String q,
                          @RequestParam(required = false, defaultValue = "-1") int page_number,
                          @RequestParam(required = false, defaultValue = "SHOWS") String sort_field,

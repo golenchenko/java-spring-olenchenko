@@ -14,6 +14,7 @@ public class Utils {
         }
         return result.replace(" :", "");
     }
+
     public String hashMapFiltersToUrlWithQuery(HashMap<String, String> filters) {
         StringBuilder query = new StringBuilder();
         for (String key : filters.keySet()) {
@@ -21,10 +22,12 @@ public class Utils {
         }
         return query.toString();
     }
+
     public String hashMapFiltersToUrlWithoutQuery(HashMap<String, String> filters) {
         String query = hashMapFiltersToUrlWithQuery(filters);
         return query.replaceFirst("&", "?");
     }
+
     public String hashMapToCategorizedUrl(HashMap<String, String> filters) {
         StringBuilder query = new StringBuilder();
         if (filters.containsKey("set_filter")) {
@@ -36,8 +39,7 @@ public class Utils {
             query.append("/").append(minMaxFilter);
             filters.remove("arrFilterFilter_P1_MIN");
             filters.remove("arrFilterFilter_P1_MAX");
-        }
-        else {
+        } else {
             StringBuilder priceFilter = new StringBuilder();
             if (filters.containsKey("arrFilterFilter_P1_MAX")) {
                 priceFilter.append("price-base-to-").append(filters.get("arrFilterFilter_P1_MAX"));

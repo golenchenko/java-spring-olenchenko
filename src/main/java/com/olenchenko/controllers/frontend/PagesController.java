@@ -1,7 +1,6 @@
 package com.olenchenko.controllers.frontend;
 
 import com.olenchenko.Model.ProductCard;
-import com.olenchenko.parser.TouchParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -21,10 +20,12 @@ import static com.olenchenko.Constants.*;
 @Controller
 public class PagesController {
     private final String apiUrl;
+
     @Autowired
     public PagesController(@Value("${api}") String apiUrl) {
         this.apiUrl = apiUrl;
     }
+
     // The given ParameterizedTypeReference is used to pass generic type information.
     // https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/client/RestTemplate.html#exchange(java.net.URI,org.springframework.http.HttpMethod,org.springframework.http.HttpEntity,org.springframework.core.ParameterizedTypeReference)
     @GetMapping("/")
@@ -56,6 +57,7 @@ public class PagesController {
         model.addAttribute("mergedData", products);
         return "index";
     }
+
     @GetMapping("/search")
     public String search(Model model) {
         model.addAttribute("apiUrl", apiUrl);

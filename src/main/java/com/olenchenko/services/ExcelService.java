@@ -4,9 +4,7 @@ import com.olenchenko.Model.Product;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -24,6 +22,7 @@ public class ExcelService {
 
     /**
      * Get row by row number or create it if it doesn't exist.
+     *
      * @param rowNum row number
      * @return row object
      */
@@ -36,7 +35,8 @@ public class ExcelService {
 
     /**
      * Get cell by row number and column number or create it if it doesn't exist
-     * @param rowNum row number
+     *
+     * @param rowNum    row number
      * @param columnNum column number
      * @return cell object
      */
@@ -50,7 +50,8 @@ public class ExcelService {
 
     /**
      * Get cell by row object and column number or create it if it doesn't exist
-     * @param row row object
+     *
+     * @param row     row object
      * @param cellNum column number
      * @return cell object
      */
@@ -64,17 +65,18 @@ public class ExcelService {
 
     /**
      * Set style for range of cells
-     * @param firstRow first row number
-     * @param lastRow last row number
+     *
+     * @param firstRow    first row number
+     * @param lastRow     last row number
      * @param firstColumn first column number
-     * @param lastColumn last column number
-     * @param cellStyle cell style
+     * @param lastColumn  last column number
+     * @param cellStyle   cell style
      */
     private void setStyleForCells(int firstRow, int lastRow, int firstColumn, int lastColumn, CellStyle cellStyle) {
         for (int i = firstRow; i <= lastRow; i++) {
             for (int j = firstColumn; j <= lastColumn; j++) {
                 Row rowFromFirstColumn = getRow(i);
-                Cell cellFromFirstColumn = getCell(rowFromFirstColumn,j);
+                Cell cellFromFirstColumn = getCell(rowFromFirstColumn, j);
                 cellFromFirstColumn.setCellStyle(cellStyle);
             }
         }
@@ -82,6 +84,7 @@ public class ExcelService {
 
     /**
      * Save XLSX file to OutputStream
+     *
      * @param outputStream
      * @throws IOException
      */
@@ -92,6 +95,7 @@ public class ExcelService {
 
     /**
      * Create "merged cells" style
+     *
      * @return Cell style
      */
     private CellStyle createMergedCellStyle() {
@@ -105,8 +109,10 @@ public class ExcelService {
     private Sheet createNewSheet(String sheetName) {
         return workbook.createSheet(sheetName);
     }
+
     /**
      * Generating XLSX file for one product object
+     *
      * @param product - Product object
      * @return byte[]
      */
@@ -139,7 +145,7 @@ public class ExcelService {
         Row thirdRow = getRow(2);
         getCell(thirdRow, 0).setCellValue("Ціна");
         Cell priceWithoutDiscountCell = getCell(thirdRow, 1);
-        Cell priceWithDiscountCell = getCell(thirdRow,5);
+        Cell priceWithDiscountCell = getCell(thirdRow, 5);
         priceWithoutDiscountCell.setCellStyle(mergedCellStyle);
         priceWithDiscountCell.setCellStyle(mergedCellStyle);
 //        TODO: add row with description of type of price
@@ -190,7 +196,7 @@ public class ExcelService {
             sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 4, 9));
             rowNum++;
         }
-        sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum-1, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum - 1, 0, 0));
 //Variations
         HashMap<String, List<HashMap<String, String>>> variations = product.getVariations();
         startRowNum = rowNum;
@@ -238,8 +244,8 @@ public class ExcelService {
                     rowNum++;
                 }
             }
-            if (startRowNum < rowNum-1) {
-                sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum-1, 0, 0));
+            if (startRowNum < rowNum - 1) {
+                sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum - 1, 0, 0));
             }
         }
 

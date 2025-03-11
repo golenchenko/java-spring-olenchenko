@@ -1,20 +1,27 @@
 ## Touch Parser
+
 ### General information
-Data from the main page is **caching** after first request. If you want to refresh it, use api for refreshing this data or open main page with **"refresh=true"** query.
+
+Data from the main page is **caching** after first request. If you want to refresh it, use api for refreshing this data
+or open main page with **"refresh=true"** query.
 
 ### Available pages
+
 `/` - main page  
-`/search` - search page  
+`/search` - search page
 
 ### Available apis
+
 `/api/test` - test api (returns "OK")  
 `/api/newproducts` - returns all new products from main page  
 `/api/sales` - returns all sales products from main page  
 `/api/markdown` - returns all markdown products from main page  
 `/api/bestsellers` - returns all bestsellers products from main page  
-`/api/mergedcategories` - return merged categories products (from newproducts, sales, markdown, bestsellers categories)  
+`/api/mergedcategories` - return merged categories products (from newproducts, sales, markdown, bestsellers
+categories)  
 `/api/refreshdata` - refresh all data from main page  
-`/api/productdata/{id}` - returns product data by article id  
+`/api/productdata/{id}` - returns product data by article id
+
 ```json
 {
   "description": "text",
@@ -53,13 +60,16 @@ Data from the main page is **caching** after first request. If you want to refre
   }
 }
 ```
+
 `/api/downloaddata/{id}` - download product data in XLSX format by article id  
-`/api/search` - searching products by query. Available query params:  
+`/api/search` - searching products by query. Available query params:
+
 - `q` - Text for search
 - `page_number` - Page number
 - `sort_field` - Type of sorting ("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE")
 - `min_price` - Minimum price of product
 - `max_price` - Maximum price of product
+
 ```text
 Response is json array with products like from /api/productdata/{id}
 ```
