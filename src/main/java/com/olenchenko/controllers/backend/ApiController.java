@@ -46,6 +46,8 @@ public class ApiController {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getNewProducts());
     }
+//    TODO: Fix sequence of categories.
+//     Disable gson sorting (for example return [y, d, e] instead of [d, e, y].
     @GetMapping(value = "/api/mergedcategories", produces = "application/json")
     public String getMergedCategoriesFromMainPage() {
         Gson gson = new Gson();
