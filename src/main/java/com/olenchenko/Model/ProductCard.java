@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 @NoArgsConstructor
@@ -17,7 +18,7 @@ public class ProductCard {
     private String priceWithDiscount;
     private String priceWithoutDiscount;
     private int article;
-    private HashMap<String, Object> variations;
+    private HashMap<String, List<HashMap<String, String>>> variations;
 
     @Override
     public boolean equals(Object o) {

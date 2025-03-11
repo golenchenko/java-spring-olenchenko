@@ -146,8 +146,8 @@ public class TouchParser {
         if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
             Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
             if (!anotherVariations.select("div.skuProperty > ul.skuPropertyList > li.skuPropertyValue > div.bg_border").isEmpty()) {
-
-                HashMap<String, Object> variations = new HashMap<>();
+// TODO: use Model for variations
+                HashMap<String, List<HashMap<String, String>>> variations = new HashMap<>();
                 List<HashMap<String, String>> skuPropertyList = new ArrayList<>();
                 HashMap<String, String> skuProperty;
                 String typeOfAnotherVariations = utils.formatVariationTitle(tabloid.getElementsByClass("skuProperty").getFirst().getElementsByClass("skuPropertyName").getFirst().text());
@@ -169,8 +169,8 @@ public class TouchParser {
         }
         return productCard;
     }
-    private HashMap<String, Object> getVariantsFromProductPage(Element productPage) {
-        HashMap<String, Object> variants = new HashMap<>();
+    private HashMap<String, List<HashMap<String, String>>> getVariantsFromProductPage(Element productPage) {
+        HashMap<String, List<HashMap<String, String>>> variants = new HashMap<>();
         Elements variantsBlock = productPage.getElementsByClass("elementSkuProperty");
         for (Element skuProperty : variantsBlock) {
             if (!skuProperty.getElementsByClass("product_condition").isEmpty()) {
@@ -295,12 +295,12 @@ public class TouchParser {
         product.setPriceWithoutDiscount(priceWithoutDiscount);
         product.setProperties(productProperties);
 
-        HashMap<String, Object> variants = getVariantsFromProductPage(element);
+        HashMap<String, List<HashMap<String, String>>> variants = getVariantsFromProductPage(element);
         product.setVariations(variants);
         return product;
     }
 
-    public HashMap<String, Object> getProductByUrl(String url) {
+    public HashMap<String, List<HashMap<String, String>>> getProductByUrl(String url) {
         return null;
     }
 
