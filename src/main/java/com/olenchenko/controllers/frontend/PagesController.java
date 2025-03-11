@@ -53,6 +53,7 @@ public class PagesController {
             }
         });
         model.addAttribute("apiUrl", apiUrl);
+        model.addAttribute("mergedData", products);
         return "index";
     }
     @GetMapping("/search")
