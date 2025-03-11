@@ -52,6 +52,7 @@ public class PagesController {
                 case salesText -> model.addAttribute("sales", value);
             }
         });
+        model.addAttribute("apiUrl", apiUrl);
         return "index";
     }
     @GetMapping("/search")
