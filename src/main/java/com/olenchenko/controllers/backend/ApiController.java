@@ -30,11 +30,6 @@ public class ApiController {
         this.productRepository = productRepository;
     }
 
-    @GetMapping("/test")
-    public String getData() {
-        return "Ok";
-    }
-
     @GetMapping(value = "/newproducts", produces = "application/json")
     public String getMainPage() {
         Gson gson = new Gson();

@@ -12,7 +12,6 @@ or open main page with **"refresh=true"** query.
 
 ### Available apis
 
-`/api/test` - test api (returns "OK")  
 `/api/newproducts` - returns all new products from main page  
 `/api/sales` - returns all sales products from main page  
 `/api/markdown` - returns all markdown products from main page  
