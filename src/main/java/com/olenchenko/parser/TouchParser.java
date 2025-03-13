@@ -48,6 +48,7 @@ public class TouchParser {
     @Setter
     private List<ProductCard> sales;
 
+    @Setter
     private Document exchangeRateJson;
 
     @Setter
@@ -79,6 +80,10 @@ public class TouchParser {
 
     public TouchParser() {
         refreshMainPage();
+        try {
+            setExchangeRateJson(Jsoup.connect(exchangeApiUrl).userAgent(userAgent).ignoreContentType(true).get());
+        } catch (IOException ignored) {
+        }
     }
 
     public void refreshMainPage() {
@@ -120,7 +125,7 @@ public class TouchParser {
         return url.replaceAll("\\d+_\\d+_\\d+/", "");
     }
 
-    private double convertPriceFromUah(String price, int currencyCode) {
+    private double convertPriceFromUah(String price, String currencyCode) {
         if (price.isEmpty()) {
             return 0.0;
         }
@@ -132,8 +137,8 @@ public class TouchParser {
             JsonArray jsonArray = JsonParser.parseString(exchangeRateJson.text()).getAsJsonArray();
             for (int i = 0; i < jsonArray.size(); i++) {
                 JsonObject jsonObject = jsonArray.get(i).getAsJsonObject();
-                if (jsonObject.get("currencyCodeA").getAsInt() == currencyCode && jsonObject.get("currencyCodeB").getAsInt() == UAH_CODE) {
-                    priceInDouble = priceInDouble / jsonObject.get("rateSell").getAsDouble();
+                if (jsonObject.get("ccy").getAsString().equals(currencyCode) && jsonObject.get("base_ccy").getAsString().equals(UAH_CODE)) {
+                    priceInDouble = priceInDouble / jsonObject.get("sale").getAsDouble();
                     return priceInDouble;
                 }
             }
@@ -307,7 +312,7 @@ public class TouchParser {
         String url = element.select("link[rel=canonical]").attr("href");
         int article = Integer.parseInt(element.getElementsByClass("changeArticle").getFirst().text());
         String imageUrl = getHQImageUrl(element.select("meta[property=og:image]").attr("content"));
-        String description = element.getElementsByClass("changeDescription").getFirst().text();
+        String description = element.getElementsByClass("changeDescription").getFirst().wholeText();
         String title = element.getElementsByClass("changeName").getFirst().text();
         String priceWithDiscount = element.getElementsByClass("changePrice").getFirst().text();
         priceWithDiscount = priceWithDiscount.isEmpty() ? "0.0" : priceWithDiscount;
