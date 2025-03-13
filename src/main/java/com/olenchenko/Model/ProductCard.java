@@ -1,17 +1,27 @@
 package com.olenchenko.Model;
 
+import com.vladmihalcea.hibernate.type.json.JsonType;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+@Entity
+@Table(name = "product_cards")
+@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @Getter
 @Setter
 public class ProductCard {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private int article;
     private String title;
     private String imageUrl;
     private String url;
@@ -19,7 +29,8 @@ public class ProductCard {
     private double priceInUSDWithDiscount;
     private double priceWithoutDiscount;
     private double priceInUSDWithoutDiscount;
-    private int article;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
     private HashMap<String, List<HashMap<String, String>>> variations;
 
     @Override

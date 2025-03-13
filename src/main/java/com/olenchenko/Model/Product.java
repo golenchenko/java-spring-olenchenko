@@ -1,17 +1,26 @@
 package com.olenchenko.Model;
 
+import com.vladmihalcea.hibernate.type.json.JsonType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 import java.util.HashMap;
 import java.util.Objects;
-
+@Entity
+@Table(name = "products")
 @NoArgsConstructor
 @Getter
 @Setter
 public class Product extends ProductCard {
+    @Column(columnDefinition = "TEXT")
     private String description;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
     private HashMap<String, String> properties;
 
     @Override

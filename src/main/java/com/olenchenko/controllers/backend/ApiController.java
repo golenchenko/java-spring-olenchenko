@@ -3,97 +3,100 @@ package com.olenchenko.controllers.backend;
 import com.google.gson.Gson;
 import com.olenchenko.Model.Product;
 import com.olenchenko.parser.TouchParser;
+import com.olenchenko.repositories.ProductRepository;
 import com.olenchenko.services.ExcelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class ApiController {
 
     ExcelService excelService;
+    ProductRepository productRepository;
 
     TouchParser touchParser;
     private final List<String> sortFields = List.of("SHOWS", "PRICE_ASC", "PRICE_DESC", "DATE");
 
-    //    @Autowired - Field injection is not recommended.
-//    Constructor injection is preferred as it allows for better testability and immutability.
-//    Field injection hides the dependencies of the class, making it unclear what dependencies
-//    the class relies on. This can make the class harder to understand and maintain.
-//    Constructor injection, on the other hand, makes dependencies explicit, as they are
-//    declared in the constructor.
-//    https://www.geeksforgeeks.org/why-is-field-injection-not-recommended-in-spring/
     @Autowired
-    public ApiController(TouchParser touchParser, ExcelService excelService) {
+    public ApiController(TouchParser touchParser, ExcelService excelService, ProductRepository productRepository) {
         this.excelService = excelService;
         this.touchParser = touchParser;
+        this.productRepository = productRepository;
     }
 
-    @GetMapping("/api/test")
+    @GetMapping("/test")
     public String getData() {
         return "Ok";
     }
 
-    @GetMapping(value = "/api/newproducts", produces = "application/json")
+    @GetMapping(value = "/newproducts", produces = "application/json")
     public String getMainPage() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getNewProducts());
     }
 
     //    TODO: Fix sequence of categories.
-//     Disable gson sorting (for example return [y, d, e] instead of [d, e, y].
-    @GetMapping(value = "/api/mergedcategories", produces = "application/json")
+    //     Disable gson sorting (for example return [y, d, e] instead of [d, e, y].
+    @GetMapping(value = "/mergedcategories", produces = "application/json")
     public String getMergedCategoriesFromMainPage() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getMergedCategories());
     }
 
-    @GetMapping(value = "/api/sales", produces = "application/json")
+    @GetMapping(value = "/sales", produces = "application/json")
     public String getSales() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getSales());
     }
 
-    @GetMapping(value = "/api/markdown", produces = "application/json")
+    @GetMapping(value = "/markdown", produces = "application/json")
     public String getMarkdown() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getMarkdown());
     }
 
-    @GetMapping(value = "/api/bestsellers", produces = "application/json")
+    @GetMapping(value = "/bestsellers", produces = "application/json")
     public String getBestSellers() {
         Gson gson = new Gson();
         return gson.toJson(touchParser.getBestSellers());
     }
 
-    @GetMapping(value = "/api/refreshdata", produces = "application/json")
+    @GetMapping(value = "/refreshdata", produces = "application/json")
     public String refreshData() {
         touchParser.refreshMainPage();
         Gson gson = new Gson();
         return gson.toJson("Data refreshed");
     }
 
-    @GetMapping(value = "/api/productdata/{id}", produces = "application/json")
+    @GetMapping(value = "/productdata/{id}", produces = "application/json")
     public String getProductData(@PathVariable int id) {
         Gson gson = new Gson();
-        return gson.toJson(touchParser.getProductByArticle(id));
+        Product product = productRepository.findByArticle(id);
+        if (product == null) {
+            product = touchParser.getProductByArticle(id);
+            productRepository.save(product);
+        }
+        return gson.toJson(product);
     }
 
-    @GetMapping(value = "/api/downloaddata/{id}", produces = "application/json")
+    @GetMapping(value = "/downloaddata/{id}", produces = "application/json")
     public ResponseEntity<byte[]> getTabledData(@PathVariable int id) {
-        Product product = touchParser.getProductByArticle(id);
+        Product product = productRepository.findByArticle(id);
+        if (product == null) {
+            product = touchParser.getProductByArticle(id);
+            productRepository.save(product);
+        }
         byte[] result = excelService.generateXLSXFile(product);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=product.xlsx").body(result);
     }
 
-    @GetMapping(value = "/api/search", produces = "application/json")
+    @GetMapping(value = "/search", produces = "application/json")
     public String search(@RequestParam String q,
                          @RequestParam(required = false, defaultValue = "-1") int page_number,
                          @RequestParam(required = false, defaultValue = "SHOWS") String sort_field,
