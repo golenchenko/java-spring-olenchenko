@@ -60,6 +60,9 @@ public class Utils {
     }
 
     public double parseStringAsDouble(String str) {
+        if (str == null || str.isEmpty()) {
+            return 0.0;
+        }
         return Double.parseDouble(str.replaceAll("[^\\d.]", ""));
     }
 }
