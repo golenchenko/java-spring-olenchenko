@@ -103,7 +103,9 @@
 <body>
 <div class="container mt-3">
     <h1>Touch парсер</h1>
-
+    <div class="mb-3">
+        <a href="search" class="btn btn-primary">Бажаєте шукати товар? Натисніть сюди.</a>
+    </div>
     <div class="product-container" th:each="categories : ${mergedData}">
         <h2 class="section-title" th:text="${categories.key}"></h2>
         <div id="productsCarousel" class="carousel slide d-flex" data-bs-ride="carousel">

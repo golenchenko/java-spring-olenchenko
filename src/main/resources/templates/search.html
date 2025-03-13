@@ -35,7 +35,17 @@
         button:hover {
             background-color: #ffe08a;
         }
+        .btn-primary {
+            background-color: #ffecb5;
+            border-color: #856404;
+            color: #594402;
+        }
 
+        .btn-primary:hover {
+            background-color: #ffe08a;
+            border-color: #856404;
+            color: #594402;
+        }
         #results {
             margin-top: 20px;
             gap: 10px;
@@ -130,6 +140,9 @@
 </head>
 <body>
 <h1>Пошук товарів</h1>
+<div class="mb-3">
+    <a href="/" class="btn btn-primary">Бажаєте повернутися на головну сторінку? Натисніть сюди.</a>
+</div>
 <div class=" ">
     <input type="text" id="searchQuery" placeholder="Введіть запит">
     <input type="number" id="pageNumber" placeholder="Номер сторінки">
