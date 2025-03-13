@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,248 +16,188 @@ import java.util.Map;
 @Service
 public class ExcelService {
 
-    Workbook workbook;
-    Sheet sheet;
+    private Workbook workbook;
+    private Sheet sheet;
 
-    /**
-     * Get row by row number or create it if it doesn't exist.
-     *
-     * @param rowNum row number
-     * @return row object
-     */
-    private Row getRow(int rowNum) {
-        if (sheet.getRow(rowNum) == null) {
-            return sheet.createRow(rowNum);
-        }
-        return sheet.getRow(rowNum);
+    public byte[] generateXLSXFile(Product product) {
+        workbook = new XSSFWorkbook();
+        sheet = createNewSheet("Інформація про товар");
+        CellStyle mergedCellStyle = createMergedCellStyle();
+        CellStyle mergedBoldCellStyle = createBoldMergedCellStyle();
+
+        createProductTitleSection(product, mergedCellStyle);
+        createProductDescription(product, mergedCellStyle);
+        createProductPriceSection(product, mergedCellStyle);
+        createProductUrlSection(product, mergedCellStyle);
+        createProductArticleSection(product, mergedCellStyle);
+        createProductPropertiesSection(product, mergedCellStyle);
+        createProductVariationsSection(product, mergedCellStyle);
+
+        sheet.autoSizeColumn(0);
+        setStyleForCells(0, sheet.getLastRowNum(), 0, 9, mergedCellStyle);
+        setStyleForCells(0, sheet.getLastRowNum(), 0, 0, mergedBoldCellStyle);
+
+        return writeToOutputStream();
     }
 
-    /**
-     * Get cell by row number and column number or create it if it doesn't exist
-     *
-     * @param rowNum    row number
-     * @param columnNum column number
-     * @return cell object
-     */
-    private Cell getCell(int rowNum, int columnNum) {
-        Row row = getRow(rowNum);
-        if (row.getCell(columnNum) == null) {
-            return row.createCell(columnNum);
-        }
-        return row.getCell(columnNum);
+    private void createProductTitleSection(Product product, CellStyle style) {
+        Row row = getRow(0);
+
+        getCell(row, 0).setCellValue("Назва товару");
+
+        Cell cell = getCell(row, 1);
+        cell.setCellValue(product.getTitle());
+        row.setHeight((short) 1000);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 9));
     }
 
-    /**
-     * Get cell by row object and column number or create it if it doesn't exist
-     *
-     * @param row     row object
-     * @param cellNum column number
-     * @return cell object
-     */
-    private Cell getCell(Row row, int cellNum) {
-        if (row.getCell(cellNum) == null) {
-            return row.createCell(cellNum);
-        }
-        return row.getCell(cellNum);
+    private void createProductDescription(Product product, CellStyle style) {
+        Row row = getRow(1);
+        getCell(row, 0).setCellValue("Опис");
+
+        Cell cell = getCell(row, 1);
+        String description = product.getDescription();
+        cell.setCellValue(description.replace("\r", "").replace("\n", " "));
+        int numberOfLines = description.split("\n").length;
+        row.setHeight((short) (row.getHeight() * numberOfLines / 2) );
+        sheet.addMergedRegion(new CellRangeAddress(1, 1, 1, 9));
     }
 
+    private void createProductPriceSection(Product product, CellStyle style) {
+        Row row = getRow(2);
+        getCell(row, 0).setCellValue("Ціна");
 
-    /**
-     * Set style for range of cells
-     *
-     * @param firstRow    first row number
-     * @param lastRow     last row number
-     * @param firstColumn first column number
-     * @param lastColumn  last column number
-     * @param cellStyle   cell style
-     */
-    private void setStyleForCells(int firstRow, int lastRow, int firstColumn, int lastColumn, CellStyle cellStyle) {
-        for (int i = firstRow; i <= lastRow; i++) {
-            for (int j = firstColumn; j <= lastColumn; j++) {
-                Row rowFromFirstColumn = getRow(i);
-                Cell cellFromFirstColumn = getCell(rowFromFirstColumn, j);
-                cellFromFirstColumn.setCellStyle(cellStyle);
+        Cell cell1 = getCell(row, 1);
+        Cell cell2 = getCell(row, 5);
+        cell1.setCellStyle(style);
+        cell2.setCellStyle(style);
+
+        String priceWithOutDiscountInUsd = String.format("%.2f", product.getPriceInUSDWithoutDiscount())  + "$";
+        String priceWithDiscountInUsd = String.format("%.2f", product.getPriceInUSDWithDiscount())  + "$";
+        cell1.setCellValue("Без знижки: " + (product.getPriceWithoutDiscount() == 0.0 ? "не вказано" : product.getPriceWithoutDiscount() + "₴ (" + priceWithOutDiscountInUsd + ")"));
+        cell2.setCellValue("Зі знижкою: " + (product.getPriceWithDiscount() == 0.0 ? "не вказано" : product.getPriceWithDiscount() + "₴ (" + priceWithDiscountInUsd + ")"));
+
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 1, 4));
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 5, 9));
+    }
+
+    private void createProductUrlSection(Product product, CellStyle style) {
+        Row row = getRow(3);
+        getCell(row, 0).setCellValue("Посилання");
+        Cell cell = getCell(row, 1);
+        cell.setCellValue(product.getUrl());
+        sheet.addMergedRegion(new CellRangeAddress(3, 3, 1, 9));
+    }
+
+    private void createProductArticleSection(Product product, CellStyle style) {
+        Row row = getRow(4);
+        getCell(row, 0).setCellValue("Артикул");
+        Cell cell = getCell(row, 1);
+        cell.setCellValue(product.getArticle());
+        sheet.addMergedRegion(new CellRangeAddress(4, 4, 1, 9));
+    }
+
+    private void createProductPropertiesSection(Product product, CellStyle style) {
+        getCell(5, 0).setCellValue("Характеристики");
+        int rowNum = 5;
+        int startNum = rowNum;
+        for (Map.Entry<String, String> entry : product.getProperties().entrySet()) {
+            Row row = getRow(rowNum);
+            getCell(row, 1).setCellValue(entry.getKey());
+            getCell(row, 4).setCellValue(entry.getValue());
+            sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 1, 3));
+            sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 4, 9));
+            rowNum++;
+        }
+        sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum - 1, 0, 0));
+    }
+
+    private void createProductVariationsSection(Product product, CellStyle style) {
+        int rowNum = sheet.getLastRowNum() + 1;
+        int startNum = rowNum;
+        if (product.getVariations().isEmpty()) return;
+
+        getCell(rowNum, 0).setCellValue("Варіації");
+        for (Map.Entry<String, List<HashMap<String, String>>> entry : product.getVariations().entrySet()) {
+            getCell(rowNum, 1).setCellValue(entry.getKey());
+            sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum + entry.getValue().size() - 1, 1, 2));
+            for (HashMap<String, String> variation : entry.getValue()) {
+                getCell(rowNum, 3).setCellValue(variation.get("title"));
+                createHyperlink(rowNum, 5, variation.get("url"), style);
+                rowNum++;
             }
         }
+        sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum, 0, 0));
     }
 
-    /**
-     * Save XLSX file to OutputStream
-     *
-     * @param outputStream
-     * @throws IOException
-     */
-    private void saveWorksheetBook(OutputStream outputStream) throws IOException {
-        workbook.write(outputStream);
-        workbook.close();
+    private void createHyperlink(int rowNum, int colNum, String url, CellStyle style) {
+        Cell cell = getCell(rowNum, colNum);
+        cell.setCellValue(url);
+        Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
+        hyperlink.setAddress(url);
+        cell.setHyperlink(hyperlink);
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, colNum, 9));
     }
 
-    /**
-     * Create "merged cells" style
-     *
-     * @return Cell style
-     */
-    private CellStyle createMergedCellStyle() {
-        CellStyle mergedCellStyle = workbook.createCellStyle();
-        mergedCellStyle.setAlignment(HorizontalAlignment.LEFT);
-        mergedCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-        mergedCellStyle.setWrapText(true);
-        return mergedCellStyle;
+    private byte[] writeToOutputStream() {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Sheet createNewSheet(String sheetName) {
         return workbook.createSheet(sheetName);
     }
 
-    /**
-     * Generating XLSX file for one product object
-     *
-     * @param product - Product object
-     * @return byte[]
-     */
-    public byte[] generateXLSXFile(Product product) {
-        workbook = new XSSFWorkbook();
-        CellStyle mergedCellStyle = createMergedCellStyle();
+    private CellStyle createMergedCellStyle() {
+        return getBasicCellStyle();
+    }
+    private CellStyle createBoldMergedCellStyle() {
+        CellStyle style = getBasicCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
 
-        sheet = createNewSheet("Інформація про товар");
+    private CellStyle getBasicCellStyle() {
+        CellStyle style = workbook.createCellStyle();
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+        style.setTopBorderColor(IndexedColors.BLACK.getIndex());
+        style.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+        style.setRightBorderColor(IndexedColors.BLACK.getIndex());
+        style.setShrinkToFit(true);
+        return style;
+    }
 
-//        Product title
-        Row firstRow = getRow(0);
-        firstRow.setHeight((short) 1000);
-        getCell(0, 0).setCellValue("Назва товару");
+    private Row getRow(int rowNum) {
+        return sheet.getRow(rowNum) != null ? sheet.getRow(rowNum) : sheet.createRow(rowNum);
+    }
 
-        Cell titleCell = getCell(0, 1);
-        titleCell.setCellValue(product.getTitle());
-        titleCell.setCellStyle(mergedCellStyle);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 9));
+    private Cell getCell(Row row, int cellNum) {
+        return row.getCell(cellNum) != null ? row.getCell(cellNum) : row.createCell(cellNum);
+    }
 
-//        Product description
-        Row secondRow = getRow(1);
-        getCell(secondRow, 0).setCellValue("Опис");
-        secondRow.setHeight((short) 5000);
-        Cell descriptionCell = getCell(secondRow, 1);
-        descriptionCell.setCellStyle(mergedCellStyle);
-        descriptionCell.setCellValue(product.getDescription());
-        sheet.addMergedRegion(new CellRangeAddress(1, 1, 1, 9));
+    private Cell getCell(int rowNum, int cellNum) {
+        return getCell(getRow(rowNum), cellNum);
+    }
 
-//        Product price
-        Row thirdRow = getRow(2);
-        getCell(thirdRow, 0).setCellValue("Ціна");
-        Cell priceWithoutDiscountCell = getCell(thirdRow, 1);
-        Cell priceWithDiscountCell = getCell(thirdRow, 5);
-        priceWithoutDiscountCell.setCellStyle(mergedCellStyle);
-        priceWithDiscountCell.setCellStyle(mergedCellStyle);
-//        TODO: add row with description of type of price
-        priceWithoutDiscountCell.setCellValue("Без знижки: " + (product.getPriceWithoutDiscount().isEmpty() ? "не вказано" : product.getPriceWithoutDiscount()));
-        priceWithoutDiscountCell.setCellValue("Зі знижкою: " + product.getPriceWithDiscount());
-        sheet.addMergedRegion(new CellRangeAddress(2, 2, 1, 4));
-        sheet.addMergedRegion(new CellRangeAddress(2, 2, 5, 9));
-
-//        Product url
-        Row fourthRow = getRow(3);
-        getCell(fourthRow, 0).setCellValue("Посилання");
-        fourthRow.setRowStyle(mergedCellStyle);
-        Cell urlCell = getCell(fourthRow, 1);
-        urlCell.setCellStyle(mergedCellStyle);
-        urlCell.setCellValue(product.getUrl());
-        sheet.addMergedRegion(new CellRangeAddress(3, 3, 1, 9));
-
-//        Product article
-        Row fifthRow = getRow(4);
-        fifthRow.setRowStyle(mergedCellStyle);
-        getCell(fifthRow, 0).setCellValue("Артикул");
-        Cell articulCell = getCell(fifthRow, 1);
-        articulCell.setCellStyle(mergedCellStyle);
-        articulCell.setCellValue(product.getArticle());
-        sheet.addMergedRegion(new CellRangeAddress(4, 4, 1, 9));
-
-
-        Row sixthRow = getRow(5);
-        getCell(sixthRow, 0).setCellValue("Характеристики");
-        HashMap<String, String> properties = product.getProperties();
-
-//        TODO: refactor code
-        int rowNum = 5;
-        int startRowNum = rowNum;
-        Row row;
-        Cell cell;
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            row = getRow(rowNum);
-            cell = getCell(row, 1);
-            cell.setCellValue(key);
-            cell.setCellStyle(mergedCellStyle);
-            cell = getCell(row, 4);
-            cell.setCellValue(value);
-            cell.setCellStyle(mergedCellStyle);
-            sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 1, 3));
-            sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 4, 9));
-            rowNum++;
-        }
-        sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum - 1, 0, 0));
-//Variations
-        HashMap<String, List<HashMap<String, String>>> variations = product.getVariations();
-        startRowNum = rowNum;
-//        variations hashmap structure:
-//
-//        "variations": {
-//    "TYPE_1": [
-//      {
-//        "title": "title1",
-//        "url": "url1"
-//      },
-//      {
-//        "title": "title2",
-//        "url": "url2"
-//      }
-//    ],
-        if (!variations.isEmpty()) {
-            row = getRow(startRowNum);
-            getCell(row, 0).setCellValue("Варіації");
-            for (Map.Entry<String, List<HashMap<String, String>>> entry : variations.entrySet()) {
-                String variationName = entry.getKey(); // TYPE_1
-                row = getRow(rowNum);
-                cell = getCell(row, 1);
-                cell.setCellValue(variationName);
-                cell.setCellStyle(mergedCellStyle);
-                List<HashMap<String, String>> variationsValues = entry.getValue();
-                sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum + variationsValues.size() - 1, 1, 2));
-
-                for (HashMap<String, String> variationsValue : variationsValues) {
-                    row = getRow(rowNum);
-                    cell = getCell(row, 3);
-                    cell.setCellValue(variationsValue.get("title"));
-                    cell.setCellStyle(mergedCellStyle);
-                    sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 3, 4));
-                    workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
-
-                    Hyperlink cellHyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
-                    cellHyperlink.setAddress(variationsValue.get("url"));
-                    cell = getCell(row, 5);
-                    cell.setHyperlink(cellHyperlink);
-                    cell.setCellStyle(mergedCellStyle);
-                    cell.setCellValue(variationsValue.get("url"));
-
-                    sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 5, 9));
-                    rowNum++;
-                }
-            }
-            if (startRowNum < rowNum - 1) {
-                sheet.addMergedRegion(new CellRangeAddress(startRowNum, rowNum - 1, 0, 0));
+    private void setStyleForCells(int firstRow, int lastRow, int firstColumn, int lastColumn, CellStyle style) {
+        for (int i = firstRow; i <= lastRow; i++) {
+            for (int j = firstColumn; j <= lastColumn; j++) {
+                getCell(getRow(i), j).setCellStyle(style);
             }
         }
-
-        sheet.autoSizeColumn(0);
-        setStyleForCells(0, rowNum - 1, 0, 0, mergedCellStyle);
-
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-            saveWorksheetBook(outputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return outputStream.toByteArray();
     }
 }
