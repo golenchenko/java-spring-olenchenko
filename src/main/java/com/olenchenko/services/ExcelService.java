@@ -25,13 +25,13 @@ public class ExcelService {
         CellStyle mergedCellStyle = createMergedCellStyle();
         CellStyle mergedBoldCellStyle = createBoldMergedCellStyle();
 
-        createProductTitleSection(product, mergedCellStyle);
-        createProductDescription(product, mergedCellStyle);
-        createProductPriceSection(product, mergedCellStyle);
-        createProductUrlSection(product, mergedCellStyle);
-        createProductArticleSection(product, mergedCellStyle);
-        createProductPropertiesSection(product, mergedCellStyle);
-        createProductVariationsSection(product, mergedCellStyle);
+        createProductTitleSection(product);
+        createProductDescription(product);
+        createProductPriceSection(product);
+        createProductUrlSection(product);
+        createProductArticleSection(product);
+        createProductPropertiesSection(product);
+        createProductVariationsSection(product);
 
         sheet.autoSizeColumn(0);
         setStyleForCells(0, sheet.getLastRowNum(), 0, 9, mergedCellStyle);
@@ -40,7 +40,7 @@ public class ExcelService {
         return writeToOutputStream();
     }
 
-    private void createProductTitleSection(Product product, CellStyle style) {
+    private void createProductTitleSection(Product product) {
         Row row = getRow(0);
 
         getCell(row, 0).setCellValue("Назва товару");
@@ -51,7 +51,7 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 9));
     }
 
-    private void createProductDescription(Product product, CellStyle style) {
+    private void createProductDescription(Product product) {
         Row row = getRow(1);
         getCell(row, 0).setCellValue("Опис");
 
@@ -63,14 +63,12 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(1, 1, 1, 9));
     }
 
-    private void createProductPriceSection(Product product, CellStyle style) {
+    private void createProductPriceSection(Product product) {
         Row row = getRow(2);
         getCell(row, 0).setCellValue("Ціна");
 
         Cell cell1 = getCell(row, 1);
         Cell cell2 = getCell(row, 5);
-        cell1.setCellStyle(style);
-        cell2.setCellStyle(style);
 
         String priceWithOutDiscountInUsd = String.format("%.2f", product.getPriceInUSDWithoutDiscount())  + "$";
         String priceWithDiscountInUsd = String.format("%.2f", product.getPriceInUSDWithDiscount())  + "$";
@@ -81,7 +79,7 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(2, 2, 5, 9));
     }
 
-    private void createProductUrlSection(Product product, CellStyle style) {
+    private void createProductUrlSection(Product product) {
         Row row = getRow(3);
         getCell(row, 0).setCellValue("Посилання");
         Cell cell = getCell(row, 1);
@@ -89,7 +87,7 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(3, 3, 1, 9));
     }
 
-    private void createProductArticleSection(Product product, CellStyle style) {
+    private void createProductArticleSection(Product product) {
         Row row = getRow(4);
         getCell(row, 0).setCellValue("Артикул");
         Cell cell = getCell(row, 1);
@@ -97,7 +95,7 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(4, 4, 1, 9));
     }
 
-    private void createProductPropertiesSection(Product product, CellStyle style) {
+    private void createProductPropertiesSection(Product product) {
         getCell(5, 0).setCellValue("Характеристики");
         int rowNum = 5;
         int startNum = rowNum;
@@ -112,7 +110,7 @@ public class ExcelService {
         sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum - 1, 0, 0));
     }
 
-    private void createProductVariationsSection(Product product, CellStyle style) {
+    private void createProductVariationsSection(Product product) {
         int rowNum = sheet.getLastRowNum() + 1;
         int startNum = rowNum;
         if (product.getVariations().isEmpty()) return;
@@ -123,14 +121,14 @@ public class ExcelService {
             sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum + entry.getValue().size() - 1, 1, 2));
             for (HashMap<String, String> variation : entry.getValue()) {
                 getCell(rowNum, 3).setCellValue(variation.get("title"));
-                createHyperlink(rowNum, 5, variation.get("url"), style);
+                createHyperlink(rowNum, 5, variation.get("url"));
                 rowNum++;
             }
         }
         sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum, 0, 0));
     }
 
-    private void createHyperlink(int rowNum, int colNum, String url, CellStyle style) {
+    private void createHyperlink(int rowNum, int colNum, String url) {
         Cell cell = getCell(rowNum, colNum);
         cell.setCellValue(url);
         Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
