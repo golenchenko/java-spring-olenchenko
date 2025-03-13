@@ -38,4 +38,4 @@ jobs:
           name: Release v${{ env.VERSION }}
           files: target/*.jar
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
