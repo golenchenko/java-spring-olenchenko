@@ -121,11 +121,12 @@ public class ExcelService {
             sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum + entry.getValue().size() - 1, 1, 2));
             for (HashMap<String, String> variation : entry.getValue()) {
                 getCell(rowNum, 3).setCellValue(variation.get("title"));
+                sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 3, 4));
                 createHyperlink(rowNum, 5, variation.get("url"));
                 rowNum++;
             }
         }
-        sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(startNum, rowNum-1, 0, 0));
     }
 
     private void createHyperlink(int rowNum, int colNum, String url) {
