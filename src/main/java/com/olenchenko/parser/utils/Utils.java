@@ -58,4 +58,8 @@ public class Utils {
         query.append(hashMapFiltersToUrlWithoutQuery(filters));
         return query.toString();
     }
+
+    public double parseStringAsDouble(String str) {
+        return Double.parseDouble(str.replaceAll("[^\\d.]", ""));
+    }
 }

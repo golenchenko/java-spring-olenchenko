@@ -1,5 +1,9 @@
 package com.olenchenko.parser;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.olenchenko.Model.Product;
 import com.olenchenko.Model.ProductCard;
 import com.olenchenko.parser.utils.Utils;
@@ -29,6 +33,7 @@ public class TouchParser {
     @Getter
     private final static String url = "https://touch.com.ua/";
 
+
     private final static String languageTag = "ua";
 
     private final static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36";
@@ -42,6 +47,8 @@ public class TouchParser {
     private List<ProductCard> markdown;
     @Setter
     private List<ProductCard> sales;
+
+    private Document exchangeRateJson;
 
     @Setter
     @Getter
@@ -113,6 +120,29 @@ public class TouchParser {
         return url.replaceAll("\\d+_\\d+_\\d+/", "");
     }
 
+    private double convertPriceFromUah(String price, int currencyCode) {
+        if (price.isEmpty()) {
+            return 0.0;
+        }
+        double priceInDouble = utils.parseStringAsDouble(price);
+        try {
+            if (exchangeRateJson == null) {
+                exchangeRateJson = Jsoup.connect(exchangeApiUrl).userAgent(userAgent).ignoreContentType(true).get();
+            }
+            JsonArray jsonArray = JsonParser.parseString(exchangeRateJson.text()).getAsJsonArray();
+            for (int i = 0; i < jsonArray.size(); i++) {
+                JsonObject jsonObject = jsonArray.get(i).getAsJsonObject();
+                if (jsonObject.get("currencyCodeA").getAsInt() == currencyCode && jsonObject.get("currencyCodeB").getAsInt() == UAH_CODE) {
+                    priceInDouble = priceInDouble / jsonObject.get("rateSell").getAsDouble();
+                    return priceInDouble;
+                }
+            }
+            return 0.0;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private ProductCard getDataFromProductCard(Element element) {
         ProductCard productCard = new ProductCard();
         Element tabloid = element.getElementsByClass("tabloid").getFirst();
@@ -135,16 +165,21 @@ public class TouchParser {
 
         Element forPrice = tabloid.select("div.buy_data").getFirst();
         String priceWithoutDiscount = forPrice.select("div.old_price > span.discount").text();
+        priceWithoutDiscount = priceWithoutDiscount.isEmpty()? "0.0" : priceWithoutDiscount;
+
         String priceWithDiscount = forPrice.select("a.price > div:nth-child(2)").text();
 
         if (!priceWithDiscount.matches(".*\\d.*")) {
             Element temp = forPrice;
             temp.select("div.old_price").remove();
             priceWithDiscount = temp.select("a.price").text();
+            priceWithDiscount = priceWithDiscount.isEmpty() ? "0.0" : priceWithDiscount;
         }
 
-        productCard.setPriceWithoutDiscount(priceWithoutDiscount);
-        productCard.setPriceWithDiscount(priceWithDiscount);
+        productCard.setPriceWithoutDiscount(utils.parseStringAsDouble(priceWithoutDiscount));
+        productCard.setPriceWithDiscount(utils.parseStringAsDouble(priceWithDiscount));
+        productCard.setPriceInUSDWithDiscount(convertPriceFromUah(priceWithDiscount, USD_CODE));
+        productCard.setPriceInUSDWithoutDiscount(convertPriceFromUah(priceWithoutDiscount, USD_CODE));
 
         if (!tabloid.getElementsByClass("skuProperty").isEmpty()) {
             Element anotherVariations = tabloid.getElementsByClass("skuProperty").getFirst();
@@ -275,10 +310,13 @@ public class TouchParser {
         String description = element.getElementsByClass("changeDescription").getFirst().text();
         String title = element.getElementsByClass("changeName").getFirst().text();
         String priceWithDiscount = element.getElementsByClass("changePrice").getFirst().text();
+        priceWithDiscount = priceWithDiscount.isEmpty() ? "0.0" : priceWithDiscount;
+
         String priceWithoutDiscount = "";
         int priceWithoutDiscountElement = element.getElementsByClass("old_new_price").size();
         if (priceWithoutDiscountElement > 0) {
             priceWithoutDiscount = element.getElementsByClass("old_new_price").getFirst().text();
+            priceWithoutDiscount = priceWithoutDiscount.isEmpty()? "0.0" : priceWithoutDiscount;
         }
 
         Element properties = element.getElementsByClass("wd_propsorter").getFirst();
@@ -297,8 +335,10 @@ public class TouchParser {
         product.setUrl(url);
         product.setImageUrl(imageUrl);
         product.setArticle(article);
-        product.setPriceWithDiscount(priceWithDiscount);
-        product.setPriceWithoutDiscount(priceWithoutDiscount);
+        product.setPriceWithDiscount(utils.parseStringAsDouble(priceWithDiscount));
+        product.setPriceInUSDWithDiscount(convertPriceFromUah(priceWithDiscount, USD_CODE));
+        product.setPriceWithoutDiscount(utils.parseStringAsDouble(priceWithoutDiscount));
+        product.setPriceInUSDWithoutDiscount(convertPriceFromUah(priceWithoutDiscount, USD_CODE));
         product.setProperties(productProperties);
 
         HashMap<String, List<HashMap<String, String>>> variants = getVariantsFromProductPage(element);

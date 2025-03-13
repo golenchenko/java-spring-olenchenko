@@ -15,8 +15,10 @@ public class ProductCard {
     private String title;
     private String imageUrl;
     private String url;
-    private String priceWithDiscount;
-    private String priceWithoutDiscount;
+    private double priceWithDiscount;
+    private double priceInUSDWithDiscount;
+    private double priceWithoutDiscount;
+    private double priceInUSDWithoutDiscount;
     private int article;
     private HashMap<String, List<HashMap<String, String>>> variations;
 
@@ -30,13 +32,15 @@ public class ProductCard {
                 Objects.equals(getImageUrl(), that.getImageUrl()) &&
                 Objects.equals(getUrl(), that.getUrl()) &&
                 Objects.equals(getPriceWithDiscount(), that.getPriceWithDiscount()) &&
+                Objects.equals(getPriceInUSDWithDiscount(), that.getPriceInUSDWithDiscount()) &&
                 Objects.equals(getPriceWithoutDiscount(), that.getPriceWithoutDiscount()) &&
+                Objects.equals(getPriceInUSDWithoutDiscount(), that.getPriceInUSDWithoutDiscount()) &&
                 Objects.equals(getVariations(), that.getVariations());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getTitle(), getImageUrl(), getUrl(), getPriceWithDiscount(), getPriceWithoutDiscount(), getArticle(), getVariations());
+        return Objects.hash(getTitle(), getImageUrl(), getUrl(), getPriceWithDiscount(), getPriceWithoutDiscount(), getArticle(), getVariations(), getPriceInUSDWithDiscount(), getPriceInUSDWithoutDiscount());
     }
 
     @Override
@@ -46,7 +50,9 @@ public class ProductCard {
                 ", imageUrl='" + imageUrl + '\'' +
                 ", url='" + url + '\'' +
                 ", priceWithDiscount='" + priceWithDiscount + '\'' +
+                ", priceInUSDWithDiscount='" + priceInUSDWithDiscount + '\'' +
                 ", priceWithoutDiscount='" + priceWithoutDiscount + '\'' +
+                ", priceInUSDWithoutDiscount='" + priceInUSDWithoutDiscount + '\'' +
                 ", article=" + article +
                 ", variations=" + variations +
                 '}';

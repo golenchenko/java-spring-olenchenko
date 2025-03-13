@@ -119,8 +119,8 @@
                             <h5 th:text="${product.title}" class="fw-bold"></h5>
                             <p><i>Артикул: <span th:text="${product.article}"></span></i></p>
                             <p>Ціна: <sup>
-                                <del th:text="${product.priceWithoutDiscount}"></del>
-                            </sup> <b th:text="${product.priceWithDiscount}"></b></p>
+                                <del th:if="${product.priceWithoutDiscount != 0}" th:text="${ product.priceWithoutDiscount} + '₴ (' + ${#numbers.formatDecimal(product.priceInUSDWithoutDiscount, 1, 2)} + '$)'"></del>
+                            </sup> <b th:text="${product.priceWithDiscount} + '₴ (' + ${#numbers.formatDecimal(product.priceInUSDWithDiscount, 1, 2)} + '$)'"></b></p>
                             <div th:if="${product['variations']}">
                                 <h6>Доступні модифікації:</h6>
                                 <div th:each="variationEntry : ${product.variations}">
